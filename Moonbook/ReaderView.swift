@@ -48,24 +48,14 @@ struct ReaderView: View {
                 ContentUnavailableView("打开失败", systemImage: "exclamationmark.triangle", description: Text(loadError))
             } else if loaded, chapters.indices.contains(chapterIndex) {
                 readingBody
-                HStack {
-                    Button("上一章") { jump(to: chapterIndex - 1) }.disabled(chapterIndex == 0)
-                    Spacer()
-                    Text("\(chapterIndex + 1) / \(chapters.count)").font(.caption).monospacedDigit()
-                    Spacer()
-                    Button("下一章") { jump(to: chapterIndex + 1) }.disabled(chapterIndex + 1 >= chapters.count)
-                }.font(.subheadline).padding()
             } else { ProgressView("正在打开…").frame(maxWidth: .infinity, maxHeight: .infinity) }
         }
         .background(background).foregroundStyle(foreground)
         .preferredColorScheme(theme == .night ? .dark : .light)
         .navigationTitle(book.title).navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(background, for: .navigationBar)
-        .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                Button("目录", systemImage: "list.bullet") { showContents = true }.disabled(!loaded)
-                Button(isBookmarked ? "移除书签" : "添加书签", systemImage: isBookmarked ? "bookmark.fill" : "bookmark") { toggleBookmark() }.disabled(!loaded)
-                Button("阅读设置", systemImage: "textformat.size") { showSettings = true }
+        .safeAreaInset(edge: .bottom) {
+            if loaded {
+                readingControls.padding(.horizontal, 20).padding(.bottom, 8)
             }
         }
         .task {
@@ -82,7 +72,35 @@ struct ReaderView: View {
             if loaded, let value { library.updatePosition(book.id, chapter: chapterIndex, paragraph: value) }
         }
         .sheet(isPresented: $showContents) { contents }
-        .sheet(isPresented: $showSettings) { settings.presentationDetents([.medium]) }
+        .sheet(isPresented: $showSettings) {
+            settings.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+        }
+    }
+
+    private var readingControls: some View {
+        VStack(spacing: 4) {
+            Text("第 \(chapterIndex + 1) / \(chapters.count) 节")
+                .font(.caption).monospacedDigit().foregroundStyle(.secondary)
+            HStack(spacing: 4) {
+                dockButton("上一章", symbol: "chevron.left") { jump(to: chapterIndex - 1) }
+                    .disabled(chapterIndex == 0)
+                dockButton("目录", symbol: "list.bullet") { showContents = true }
+                dockButton(isBookmarked ? "移除书签" : "添加书签",
+                    symbol: isBookmarked ? "bookmark.fill" : "bookmark") { toggleBookmark() }
+                dockButton("阅读设置", symbol: "textformat.size") { showSettings = true }
+                dockButton("下一章", symbol: "chevron.right") { jump(to: chapterIndex + 1) }
+                    .disabled(chapterIndex + 1 >= chapters.count)
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .frame(maxWidth: 420).moonbookGlass(radius: 30)
+    }
+
+    private func dockButton(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(.body.weight(.medium))
+                .frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
+        }.buttonStyle(.plain).accessibilityLabel(title)
     }
 
     private var readingBody: some View {
@@ -147,17 +165,29 @@ struct ReaderView: View {
 
     private var settings: some View {
         NavigationStack {
-            Form {
-                Section("排版") {
-                    LabeledContent("字号", value: "\(Int(fontSize))")
-                    Slider(value: $fontSize, in: 16...34, step: 1).accessibilityLabel("字号")
-                    LabeledContent("行距", value: "\(Int(lineSpacing))")
-                    Slider(value: $lineSpacing, in: 4...20, step: 1).accessibilityLabel("行距")
-                }
-                Picker("阅读主题", selection: $themeName) {
-                    ForEach(ReadingTheme.allCases) { Text($0.title).tag($0.rawValue) }
-                }.pickerStyle(.segmented)
+            ScrollView {
+                VStack(spacing: 20) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("排版").font(.headline)
+                        LabeledContent("字号", value: "\(Int(fontSize))")
+                        Slider(value: $fontSize, in: 16...34, step: 1).accessibilityLabel("字号")
+                        LabeledContent("行距", value: "\(Int(lineSpacing))")
+                        Slider(value: $lineSpacing, in: 4...20, step: 1).accessibilityLabel("行距")
+                    }.padding(20).moonbookGlass()
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("阅读主题").font(.headline)
+                        Picker("阅读主题", selection: $themeName) {
+                            ForEach(ReadingTheme.allCases) { Text($0.title).tag($0.rawValue) }
+                        }.pickerStyle(.segmented)
+                    }.padding(20).moonbookGlass()
+                    Text("月色入书，片刻安静。")
+                        .font(.system(size: fontSize, design: .serif)).lineSpacing(lineSpacing)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(20).background(background, in: RoundedRectangle(cornerRadius: 16))
+                        .foregroundStyle(foreground).accessibilityLabel("排版预览：月色入书，片刻安静。")
+                }.padding(20).frame(maxWidth: 620).frame(maxWidth: .infinity)
             }.navigationTitle("阅读设置").navigationBarTitleDisplayMode(.inline)
+                .background(background)
                 .toolbar { Button("完成") { showSettings = false } }
         }
     }

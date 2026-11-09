@@ -10,6 +10,11 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - name: Select Xcode 26
+        run: |
+          XCODE_PATH=$(python3 -c 'import pathlib; apps = sorted(pathlib.Path("/Applications").glob("Xcode_26*.app")); assert apps, "Xcode 26 is required"; print(apps[-1])')
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
       - name: Build unsigned iPhone IPA
         run: bash scripts/build_unsigned_ipa.sh
       - uses: actions/upload-artifact@v4
@@ -23,17 +28,35 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - name: Select Xcode 26
+        run: |
+          XCODE_PATH=$(python3 -c 'import pathlib; apps = sorted(pathlib.Path("/Applications").glob("Xcode_26*.app")); assert apps, "Xcode 26 is required"; print(apps[-1])')
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
       - name: Choose an available iPhone simulator
         run: |
-          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; print(next(d["udid"] for devices in json.load(sys.stdin)["devices"].values() for d in devices if "iPhone" in d["name"]))')
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; print(next(d["udid"] for runtime, devices in json.load(sys.stdin)["devices"].items() if "iOS-26" in runtime for d in devices if "iPhone" in d["name"]))')
           echo "DEVICE_ID=$DEVICE_ID" >> "$GITHUB_ENV"
       - name: Build and test
         run: |
           xcodebuild test -project Moonbook.xcodeproj -scheme Moonbook \
             -destination "platform=iOS Simulator,id=$DEVICE_ID" \
-            -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO
+            -derivedDataPath build/simulator -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: xcode-test-results
           path: TestResults.xcresult
+      - name: Capture iOS 26 bookshelf
+        run: |
+          xcrun simctl boot "$DEVICE_ID" || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          xcrun simctl install "$DEVICE_ID" build/simulator/Build/Products/Debug-iphonesimulator/Moonbook.app
+          xcrun simctl launch "$DEVICE_ID" com.alicelikeeat.moonbook
+          sleep 3
+          mkdir -p screenshots
+          xcrun simctl io "$DEVICE_ID" screenshot screenshots/bookshelf-ios26.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios26-screenshots
+          path: screenshots

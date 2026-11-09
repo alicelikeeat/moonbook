@@ -27,7 +27,7 @@ struct LibraryView: View {
                             Text("导入 TXT 或 EPUB 小说，随时离线阅读。")
                         } actions: {
                             Button("导入小说", systemImage: "plus") { showImporter = true }
-                                .buttonStyle(.borderedProminent)
+                                .moonbookPrimaryButton()
                         }.padding(.top, 50)
                     } else {
                         LazyVGrid(columns: columns, spacing: 28) {
@@ -50,7 +50,21 @@ struct LibraryView: View {
                     Button("导入小说", systemImage: "plus") { showImporter = true }.disabled(library.importing)
                 }
             }
-            .overlay { if library.importing { ProgressView("正在整理书籍…").padding(28).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18)) } }
+            .safeAreaInset(edge: .bottom) {
+                HStack(spacing: 16) {
+                    Image(systemName: "moon.stars").font(.title3)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("我的藏书").font(.subheadline.weight(.semibold))
+                        Text("\(library.books.count) 本 · 离线阅读").font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 8)
+                    Button("导入", systemImage: "plus") { showImporter = true }
+                        .moonbookPrimaryButton().disabled(library.importing)
+                }
+                .padding(16).frame(maxWidth: 620).moonbookGlass()
+                .padding(.horizontal, 20).padding(.bottom, 8)
+            }
+            .overlay { if library.importing { ProgressView("正在整理书籍…").padding(28).moonbookGlass() } }
             .fileImporter(isPresented: $showImporter,
                 allowedContentTypes: [.plainText, UTType(filenameExtension: "epub") ?? .data]) { result in
                 switch result {

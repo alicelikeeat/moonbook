@@ -2,7 +2,7 @@
 
 一款用 SwiftUI 构建的本地小说阅读器。无需账号，导入后离线阅读，不接入网络书源。
 
-## 第一版功能
+## 功能
 
 - 从「文件」或其他 App 的「打开方式」导入 TXT / EPUB。
 - 书架、重命名、删除；导入后复制原文件到 App 私有目录，源文件移动不影响阅读。
@@ -11,9 +11,15 @@
 - 上下滚动阅读、章节切换、段落级自动续读、添加和删除书签。
 - 字号、行距、纸白 / 暖杏 / 夜读主题；适配 iPhone 和 iPad。
 
+## Liquid Glass 界面（v0.2.0）
+
+在 iOS 26 上，书架悬浮导入栏、阅读悬浮工具栏和阅读设置卡片使用系统 `glassEffect`，导航栏使用系统默认外观，正文与排版预览保留纯色纸张背景。
+
+最低仍支持 iOS 17：旧系统回退为系统 Material；开启「降低透明度」时，自定义面板使用实色背景。编译需要 Xcode 26 / iOS 26 SDK。
+
 ## 在 Mac 上运行
 
-1. 安装 Xcode 16 或更新版本，打开 `Moonbook.xcodeproj`。
+1. 安装 Xcode 26 或更新版本，打开 `Moonbook.xcodeproj`。
 2. 等待 Swift Package Manager 下载 ZIPFoundation 0.9.19。
 3. 选择 **Moonbook** scheme 和 iOS 17+ 模拟器，点击 Run。
 4. 真机运行时，在 Signing & Capabilities 中选择自己的 Team，并改为唯一的 Bundle Identifier。
