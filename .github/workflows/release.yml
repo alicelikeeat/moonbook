@@ -24,10 +24,13 @@ jobs:
         run: |
           gh api repos/alicelikeeat/moonbook/actions/runs/42589512054 > run.json
           gh api repos/alicelikeeat/moonbook/actions/runs/42589512054/jobs > jobs.json
+          gh api "repos/alicelikeeat/moonbook/compare/$SOURCE_SHA...$GITHUB_SHA" > compare.json
           python3 - <<'PY'
           import json, os
           run = json.load(open('run.json'))
           assert run['head_sha'] == os.environ['SOURCE_SHA'], 'Unexpected source commit'
+          changes = json.load(open('compare.json'))
+          assert all(f['filename'] == '.github/workflows/release.yml' for f in changes['files']), 'Untested application changes'
           jobs = json.load(open('jobs.json'))['jobs']
           assert any(j['name'] == 'unsigned-ipa' and j['conclusion'] == 'success' for j in jobs), 'IPA build has not passed'
           assert any(j['name'] == 'test' and any(s['name'] == 'Build and test' and s['conclusion'] == 'success' for s in j['steps']) for j in jobs), 'Simulator tests have not passed'
@@ -66,7 +69,7 @@ jobs:
           使用 Xcode 26 构建，已验证真机版构建、IPA 完整性及 SHA-256，并通过 iOS 26 模拟器测试。尚未进行真机人工验证。
           NOTES
           gh release create v0.2.0 package/Moonbook-unsigned.ipa package/Moonbook-unsigned.ipa.sha256 \
-            --target "$SOURCE_SHA" --title 'Moonbook v0.2.0 · 未签名 IPA' \
+            --target "$GITHUB_SHA" --title 'Moonbook v0.2.0 · 未签名 IPA' \
             --notes-file notes.md --draft
           gh release view v0.2.0 --json assets --jq '.assets[].name' > assets.txt
           grep -Fx 'Moonbook-unsigned.ipa' assets.txt
