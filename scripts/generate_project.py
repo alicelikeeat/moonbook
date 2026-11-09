@@ -32,6 +32,7 @@ for target, names in [('app',files),('test',tests)]:
     add(target+'.resources','{isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;}')
     for mode in ['Debug','Release']:
         settings = 'SWIFT_VERSION = 5.0; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; TARGETED_DEVICE_FAMILY = "1,2"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; '
+        settings += 'ONLY_ACTIVE_ARCH = '+('YES' if mode == 'Debug' else 'NO')+'; '
         settings += 'SWIFT_OPTIMIZATION_LEVEL = '+('"-Onone"' if mode == 'Debug' else '"-O"')+'; '
         if target == 'app':
             settings += 'PRODUCT_NAME = Moonbook; PRODUCT_BUNDLE_IDENTIFIER = com.alicelikeeat.moonbook; MARKETING_VERSION = 0.1.0; CURRENT_PROJECT_VERSION = 1; INFOPLIST_KEY_CFBundleDisplayName = Moonbook; INFOPLIST_KEY_UILaunchScreen_Generation = YES; INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES; INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES; INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; INFOPLIST_FILE = Moonbook/Info.plist; '
