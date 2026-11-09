@@ -18,7 +18,7 @@ xcodebuild build \
 APP_PATH="$PROJECT_ROOT/build/unsigned/Build/Products/Release-iphoneos/Moonbook.app"
 test -f "$APP_PATH/Moonbook"
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleSupportedPlatforms:0' "$APP_PATH/Info.plist")" = 'iPhoneOS'
-xcrun lipo -verify_arch arm64 "$APP_PATH/Moonbook"
+xcrun lipo "$APP_PATH/Moonbook" -verify_arch arm64
 if codesign -d "$APP_PATH" >/dev/null 2>&1; then
   echo 'Expected an unsigned app, but found a code signature.' >&2
   exit 1
