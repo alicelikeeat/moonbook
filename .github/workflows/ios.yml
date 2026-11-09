@@ -5,6 +5,19 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
+  unsigned-ipa:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build unsigned iPhone IPA
+        run: bash scripts/build_unsigned_ipa.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Moonbook-unsigned-ipa
+          path: build/artifacts/Moonbook-unsigned.ipa*
+          if-no-files-found: error
+          retention-days: 14
   test:
     runs-on: macos-15
     timeout-minutes: 25

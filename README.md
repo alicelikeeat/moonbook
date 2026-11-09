@@ -21,6 +21,20 @@
 
 无需服务器、API Key 或付费账号即可在模拟器上运行。真机安装需要本地签名。
 
+## 下载未签名 IPA
+
+在 GitHub 的 Actions 页面打开最新成功运行的 **iOS build and tests**，在 Artifacts 下载 `Moonbook-unsigned-ipa`，解压下载的 ZIP 后得到 `Moonbook-unsigned.ipa` 和 SHA-256 校验文件。下载 Actions 附件通常需要登录 GitHub，附件保留 14 天。
+
+这是面向 iPhone / iPad 真机的 arm64 Release 包，不是模拟器包。构建过程检查平台、架构、未签名状态和 ZIP 完整性。未签名 IPA 无法直接安装，需使用自己的 Apple 签名证书与描述文件，或自行通过签名工具签名后安装；仓库不需要保存任何证书或密码。
+
+也可以在安装 Xcode 的 Mac 上自行打包：
+
+```sh
+bash scripts/build_unsigned_ipa.sh
+```
+
+产物位于 `build/artifacts/Moonbook-unsigned.ipa`。
+
 ## 验证
 
 项目提供共享 scheme 和 XCTest：覆盖中文章节识别、编码、空文件、长文本、导入后的独立存储以及进度持久化。
