@@ -1,4 +1,4 @@
-name: Publish Moonbook v0.1.0 IPA
+name: Publish Moonbook v0.2.0 IPA
 on:
   push:
     branches: [codex/moonbook-ios]
@@ -8,7 +8,7 @@ permissions:
   contents: write
   actions: read
 concurrency:
-  group: moonbook-release-v0.1.0
+  group: moonbook-release-v0.2.0
   cancel-in-progress: false
 jobs:
   publish:
@@ -16,24 +16,27 @@ jobs:
     timeout-minutes: 10
     env:
       GH_REPO: alicelikeeat/moonbook
-      SOURCE_SHA: fb32c9acbe52329fac03f1384913adfac2588d49
+      SOURCE_SHA: d30d8477a4482af211f6616ecaa6a2d61814b918
     steps:
       - name: Verify source build succeeded
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api repos/alicelikeeat/moonbook/actions/runs/42550102173 > run.json
+          gh api repos/alicelikeeat/moonbook/actions/runs/42589512054 > run.json
+          gh api repos/alicelikeeat/moonbook/actions/runs/42589512054/jobs > jobs.json
           python3 - <<'PY'
           import json, os
           run = json.load(open('run.json'))
           assert run['head_sha'] == os.environ['SOURCE_SHA'], 'Unexpected source commit'
-          assert run['conclusion'] == 'success', 'Source build has not passed'
+          jobs = json.load(open('jobs.json'))['jobs']
+          assert any(j['name'] == 'unsigned-ipa' and j['conclusion'] == 'success' for j in jobs), 'IPA build has not passed'
+          assert any(j['name'] == 'test' and any(s['name'] == 'Build and test' and s['conclusion'] == 'success' for s in j['steps']) for j in jobs), 'Simulator tests have not passed'
           PY
       - name: Download verified unsigned IPA
         uses: actions/download-artifact@v4
         with:
           name: Moonbook-unsigned-ipa
-          run-id: 42550102173
+          run-id: 42589512054
           github-token: ${{ github.token }}
           path: package
       - name: Check package
@@ -46,7 +49,7 @@ jobs:
           with zipfile.ZipFile('Moonbook-unsigned.ipa') as archive:
               info = plistlib.loads(archive.read('Payload/Moonbook.app/Info.plist'))
               assert info['CFBundleSupportedPlatforms'] == ['iPhoneOS']
-              assert info['CFBundleShortVersionString'] == '0.1.0'
+              assert info['CFBundleShortVersionString'] == '0.2.0'
               assert 'Payload/Moonbook.app/Moonbook' in archive.namelist()
           PY
       - name: Create and publish release
@@ -54,18 +57,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cat > notes.md <<'NOTES'
-          Moonbook 本地小说阅读器第一版，支持 TXT / EPUB 导入、章节目录、书签、自动续读与阅读主题。
+          Moonbook Liquid Glass 版：iOS 26 上使用原生玻璃悬浮书架栏、阅读工具栏和阅读设置卡片。正文保留纯色纸张背景；iOS 17–18 回退为系统磨砂材质，开启降低透明度时使用实色面板。
 
           下载下方的 **Moonbook-unsigned.ipa**，这是适用于 iOS 17+ iPhone / iPad 的 arm64 未签名 Release 包，需要自行签名后安装。
 
           EPUB 目前只显示文字，不保留图片与原书 CSS；阅读采用上下滚动。
 
-          已验证真机版构建、IPA 完整性及 SHA-256，模拟器的 7 项 XCTest 全部通过。尚未进行真机人工验证。
+          使用 Xcode 26 构建，已验证真机版构建、IPA 完整性及 SHA-256，并通过 iOS 26 模拟器测试。尚未进行真机人工验证。
           NOTES
-          gh release create v0.1.0 package/Moonbook-unsigned.ipa package/Moonbook-unsigned.ipa.sha256 \
-            --target "$SOURCE_SHA" --title 'Moonbook v0.1.0 · 未签名 IPA' \
+          gh release create v0.2.0 package/Moonbook-unsigned.ipa package/Moonbook-unsigned.ipa.sha256 \
+            --target "$SOURCE_SHA" --title 'Moonbook v0.2.0 · 未签名 IPA' \
             --notes-file notes.md --draft
-          gh release view v0.1.0 --json assets --jq '.assets[].name' > assets.txt
+          gh release view v0.2.0 --json assets --jq '.assets[].name' > assets.txt
           grep -Fx 'Moonbook-unsigned.ipa' assets.txt
           grep -Fx 'Moonbook-unsigned.ipa.sha256' assets.txt
-          gh release edit v0.1.0 --draft=false --latest
+          gh release edit v0.2.0 --draft=false --latest
